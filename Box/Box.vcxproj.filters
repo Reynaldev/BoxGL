@@ -19,6 +19,12 @@
     <Filter Include="Libs\OpenGL">
       <UniqueIdentifier>{8ffaeb59-3924-447d-be90-8df444e08b1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shaders">
+      <UniqueIdentifier>{e5a181b4-99cb-482c-b76c-7cd8e45c7903}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Images">
+      <UniqueIdentifier>{aa706c74-3f15-48eb-92f6-6599050c084f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -27,5 +33,18 @@
     <ClCompile Include="glad.c">
       <Filter>Libs\OpenGL</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="box.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="box.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="container.jpg">
+      <Filter>Resource Files\Images</Filter>
+    </Image>
   </ItemGroup>
 </Project>
