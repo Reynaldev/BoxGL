@@ -4,6 +4,11 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
@@ -11,8 +16,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#define SCREEN_WIDTH	800
-#define SCREEN_HEIGHT	600
+
+#define SCREEN_WIDTH	1280
+#define SCREEN_HEIGHT	720
 
 typedef std::string String;
 
@@ -268,10 +274,20 @@ int main()
 		return -1;
 	}
 
-	glEnable(GL_DEPTH_TEST);
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO &io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 330 core");
+
+	//glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	//glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+
+	glEnable(GL_DEPTH_TEST);
 
     GLBuffer.init();
 
@@ -310,6 +326,10 @@ int main()
 
 		glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
 		
 		glBindVertexArray(GLBuffer.VAO);
 		for (int i = 0; i < 10; i++)
@@ -327,10 +347,23 @@ int main()
 			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 		}
 
+		ImGui::Render();
+
+		int displayW, displayH;
+		glfwGetFramebufferSize(window, &displayW, &displayH);
+		glViewport(0, 0, displayW, displayH);
+
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	glfwDestroyWindow(window);
 	glfwTerminate();
 
 	return 0;
