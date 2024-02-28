@@ -280,6 +280,19 @@ int main()
 	box.createBuffer();
 	box.createTexture("container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR);
 
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
 	glm::mat4 model(1.0f);
 	glm::mat4 view(1.0f);
 	glm::mat4 projection(1.0f);
@@ -297,14 +310,22 @@ int main()
 
 		glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		glBindVertexArray(GLBuffer.VAO);
+		for (int i = 0; i < 10; i++)
+		{
+			float angle = 20.0f * (i + 1);
+			model = glm::mat4(1.0f);
 
-		box.draw();
+			model = glm::translate(model, cubePositions[i]);
+			model = glm::rotate(model, glm::radians(angle * (float)(t / 10.0f)), glm::vec3(0.1f * (i + 1), 0.3f, 0.5f));
 
-		model = glm::rotate(model, (float)(t / 1000) * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+			box.draw();
 
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
