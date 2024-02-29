@@ -16,10 +16,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-
-#define SCREEN_WIDTH	1280
-#define SCREEN_HEIGHT	720
-
 typedef std::string String;
 
 struct
@@ -247,6 +243,14 @@ public:
 	GLuint getProgram() { return this->progID; }
 };
 
+static struct
+{
+	float width = 1280.0f, height = 720.0f;
+	float camFoV = 45.0f;
+
+	bool showBoxSettings = false;
+} App;
+
 void frameBufferSizeCallback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -259,7 +263,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GLFW_VERSION_MINOR);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Box GL", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(App.width, App.height, "Box GL", NULL, NULL);
 	if (!window)
 	{
 		printf("Failed to create window\n");
@@ -314,7 +318,7 @@ int main()
 	glm::mat4 projection(1.0f);
 
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(45.0f), App.width / App.height, 0.1f, 100.0f);
 
 	unsigned int modelLoc = glGetUniformLocation(box.getProgram(), "uModel");
 	unsigned int viewLoc = glGetUniformLocation(box.getProgram(), "uView");
@@ -330,6 +334,18 @@ int main()
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("Window"))
+			{
+				ImGui::MenuItem("Settings...", NULL, &App.showBoxSettings);
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
+		}
 		
 		glBindVertexArray(GLBuffer.VAO);
 		for (int i = 0; i < 10; i++)
@@ -347,11 +363,58 @@ int main()
 			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 		}
 
+		if (App.showBoxSettings)
+		{
+			if (ImGui::Begin("Settings", &App.showBoxSettings))
+			{
+				static const char *label[] = {
+					"Window",
+					"Graphics"
+				};
+				static int selected = 0;
+
+				if (ImGui::BeginChild("Left panel", ImVec2(150, 0), true))
+				{
+					for (int i = 0; i < (sizeof(label) / sizeof(char *)); i++)
+					{
+						if (ImGui::Selectable(label[i], selected == i))
+							selected = i;
+					}
+				}
+				ImGui::EndChild();
+
+
+				ImGui::SameLine();
+
+				if (ImGui::BeginChild("Right panel", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())))
+				{
+					switch (selected)
+					{
+					case 0:		// Window
+						ImGui::SeparatorText("Camera");
+						ImGui::Text("Field of View"); ImGui::SameLine();
+						ImGui::SliderFloat(" ", &App.camFoV, 0.0f, 100.0f, "FoV (%.3f)");
+						break;
+					case 1:		// Graphics
+						ImGui::TextWrapped("This is a graphics panel");
+						break;
+					default:
+						break;
+					}
+				}
+				ImGui::EndChild();
+
+			}
+			ImGui::End();
+		}
+
 		ImGui::Render();
 
 		int displayW, displayH;
 		glfwGetFramebufferSize(window, &displayW, &displayH);
 		glViewport(0, 0, displayW, displayH);
+
+		projection = glm::perspective(glm::radians(App.camFoV), (float) (displayW / displayH), 0.1f, 100.0f);
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
