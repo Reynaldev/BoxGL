@@ -245,8 +245,14 @@ public:
 
 static struct
 {
-	float width = 1280.0f, height = 720.0f;
+	// Window
+	int width = 800, height = 600;
+	ImVec4 bgColor = ImVec4(0.2f, 0.3f, 0.4f, 1.0f);
+
+	// Camera
 	float camFoV = 45.0f;
+	float nearPlane = 0.1f;
+	float farPlane = 100.0f;
 
 	bool showBoxSettings = false;
 } App;
@@ -318,7 +324,7 @@ int main()
 	glm::mat4 projection(1.0f);
 
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	projection = glm::perspective(glm::radians(45.0f), App.width / App.height, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
 	unsigned int modelLoc = glGetUniformLocation(box.getProgram(), "uModel");
 	unsigned int viewLoc = glGetUniformLocation(box.getProgram(), "uView");
@@ -328,7 +334,7 @@ int main()
 	{
 		double t = glfwGetTime();
 
-		glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+		glClearColor(App.bgColor.x, App.bgColor.y, App.bgColor.z, App.bgColor.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -383,7 +389,6 @@ int main()
 				}
 				ImGui::EndChild();
 
-
 				ImGui::SameLine();
 
 				if (ImGui::BeginChild("Right panel", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())))
@@ -392,8 +397,11 @@ int main()
 					{
 					case 0:		// Window
 						ImGui::SeparatorText("Camera");
-						ImGui::Text("Field of View"); ImGui::SameLine();
-						ImGui::SliderFloat(" ", &App.camFoV, 0.0f, 100.0f, "FoV (%.3f)");
+						{
+							ImGui::SliderFloat("Field of View", &App.camFoV, 0.0f, 100.0f);
+							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 100.0f);
+							ImGui::SliderFloat("Far plane", &App.farPlane, 0.1f, 100.0f);
+						}
 						break;
 					case 1:		// Graphics
 						ImGui::TextWrapped("This is a graphics panel");
@@ -403,7 +411,6 @@ int main()
 					}
 				}
 				ImGui::EndChild();
-
 			}
 			ImGui::End();
 		}
@@ -411,10 +418,10 @@ int main()
 		ImGui::Render();
 
 		int displayW, displayH;
-		glfwGetFramebufferSize(window, &displayW, &displayH);
-		glViewport(0, 0, displayW, displayH);
+		glfwGetFramebufferSize(window, &App.width, &App.height);
+		glViewport(0, 0, App.width, App.height);
 
-		projection = glm::perspective(glm::radians(App.camFoV), (float) (displayW / displayH), 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
