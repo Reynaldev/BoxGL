@@ -1,6 +1,11 @@
+#ifdef _WIN32
+	#define _CRT_SECURE_NO_WARNINGS
+#endif // _WIN32
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -29,6 +34,9 @@ struct
     }
 } GLBuffer;
 
+/*
+Shader only struct. Use Cube struct to add and modify a cube.
+*/
 struct Box
 {
 private:
@@ -243,19 +251,97 @@ public:
 	GLuint getProgram() { return this->progID; }
 };
 
-static struct
+/*
+A struct to instantiate and modify a cube
+*/
+struct Cube
 {
+private:
+	unsigned int id = 0;	// Position id;
+
+public:
+	glm::vec3 pos;
+
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = glm::mat4(1.0f);
+
+	/*
+	Add new cube, where it takes vector size of the cube and position, with default to 0.0f.
+	Use App.retrieveNewCubeID() to retrieve ID.
+	*/
+	Cube(unsigned int id, glm::vec3 pos = glm::vec3(0.0f))
+	{
+		this->id = id;
+		this->pos = pos;
+	}
+
+	unsigned int getPosID() { return this->id; }
+};
+
+struct
+{
+	enum CubeMod
+	{
+		INCREASE,
+		DECREASE
+	};
+
 	// Window
-	int width = 800, height = 600;
+	int width = 1280, height = 720;
 	ImVec4 bgColor = ImVec4(0.2f, 0.3f, 0.4f, 1.0f);
 
 	// Camera
+	glm::mat4 cam = glm::mat4(1.0f);
+
 	float camFoV = 45.0f;
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
+	// Window toggles
 	bool showBoxSettings = false;
+
+	// Cube
+	std::vector<Cube> cubes;
+	int cubeAmount = 0;
+
+	void updateCubes(Cube cube, CubeMod mod = INCREASE)
+	{
+		if (mod == INCREASE)
+			cubes.push_back(cube);
+		else
+			cubes.erase(cubes.begin() + cube.getPosID());
+	}
+
+	unsigned int retrieveNewCubeID()
+	{
+		int id = 0;
+
+		if (cubes.empty())
+			return id;
+
+		for (int i = 0; i < cubes.size(); i++)
+		{
+			if (cubes[i].getPosID() >= id)
+				id += cubes[i].getPosID() + 1;
+		}
+
+		return id;
+	}
 } App;
+
+template<typename T>
+inline T clamp(T &v, T max, T min)
+{
+	T rv;
+
+	if (v > max)
+		v = max;
+
+	if (v < min)
+		v = min;
+
+	return rv = v;
+}
 
 void frameBufferSizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -299,32 +385,14 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-    GLBuffer.init();
+	GLBuffer.init();
 
-    Box box = Box();
+	Box box = Box();
 	box.createShader("box.vert", "box.frag");
 	box.createBuffer();
 	box.createTexture("container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR);
 
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
-
-	glm::mat4 model(1.0f);
-	glm::mat4 view(1.0f);
-	glm::mat4 projection(1.0f);
-
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	projection = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
+	App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
 	unsigned int modelLoc = glGetUniformLocation(box.getProgram(), "uModel");
 	unsigned int viewLoc = glGetUniformLocation(box.getProgram(), "uView");
@@ -351,22 +419,6 @@ int main()
 			}
 
 			ImGui::EndMainMenuBar();
-		}
-		
-		glBindVertexArray(GLBuffer.VAO);
-		for (int i = 0; i < 10; i++)
-		{
-			float angle = 20.0f * (i + 1);
-			model = glm::mat4(1.0f);
-
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, glm::radians(angle * (float)(t / 10.0f)), glm::vec3(0.1f * (i + 1), 0.3f, 0.5f));
-
-			box.draw();
-
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 		}
 
 		if (App.showBoxSettings)
@@ -405,11 +457,59 @@ int main()
 
 						ImGui::SeparatorText("Window");
 						{
-							ImGui::ColorPicker4("Background Color", (float*) &App.bgColor, ImGuiColorEditFlags_NoAlpha);
+							ImGui::ColorPicker4("Background Color", (float *)&App.bgColor, ImGuiColorEditFlags_NoAlpha);
 						}
 						break;
 					case 1:		// Graphics
-						ImGui::TextWrapped("This is a graphics panel");
+						ImGui::SeparatorText("Cubes");
+						{
+							if (ImGui::Button("Add"))
+							{
+								Cube cube(App.retrieveNewCubeID(), glm::vec3(0.0f));
+								App.updateCubes(cube);
+							}
+							ImGui::SetItemTooltip("Add new cube");
+
+							if (App.cubes.size() > 0)
+							{
+								if (ImGui::TreeNode("Cube settings"))
+								{
+									static int selected = 0;
+									static char prevCombo[8];
+									
+									sprintf(prevCombo, "Cube %d", selected);
+
+									if (ImGui::BeginCombo("Cubes", prevCombo))
+									{
+										for (int i = 0; i < App.cubes.size(); i++)
+										{
+											const bool isSelected = (selected == i);
+											char label[8];
+
+											sprintf(label, "Cube %d", i);
+											
+											if (ImGui::Selectable(label, isSelected))
+												 selected = i;
+
+											if (isSelected)
+												ImGui::SetItemDefaultFocus();
+										}
+										ImGui::EndCombo();
+									}
+
+									Cube &cube = App.cubes.at(App.cubes[selected].getPosID());
+
+									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
+
+									//if (ImGui::Button("Remove"))
+									//{
+									//	App.updateCubes();
+									//}
+
+									ImGui::TreePop();
+								}
+							}
+						}
 						break;
 					default:
 						break;
@@ -420,13 +520,36 @@ int main()
 			ImGui::End();
 		}
 
+		glBindVertexArray(GLBuffer.VAO);
+		if (!App.cubes.empty())
+		{
+			for (int i = 0; i < App.cubes.size(); i++)
+			{
+				float angle = 20.0f * (i + 1);
+				App.cubes[i].model = glm::mat4(1.0f);
+				App.cubes[i].view = glm::mat4(1.0f);
+
+				App.cubes[i].model = glm::rotate(
+					App.cubes[i].model,
+					glm::radians(angle * (float)(t / 10.0f)), glm::vec3(0.1f * (i + 1), 0.3f, 0.5f));
+
+				App.cubes[i].view = glm::translate(App.cubes[i].view, App.cubes[i].pos);
+
+				box.draw();
+
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(App.cubes[i].model));
+				glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(App.cubes[i].view));
+				glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(App.cam));
+			}
+		}
+
 		ImGui::Render();
 
-		int displayW, displayH;
+		//int displayW, displayH;
 		glfwGetFramebufferSize(window, &App.width, &App.height);
 		glViewport(0, 0, App.width, App.height);
 
-		projection = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
+		App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
