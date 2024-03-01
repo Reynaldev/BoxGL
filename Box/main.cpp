@@ -402,6 +402,11 @@ int main()
 							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 100.0f);
 							ImGui::SliderFloat("Far plane", &App.farPlane, 0.1f, 100.0f);
 						}
+
+						ImGui::SeparatorText("Window");
+						{
+							ImGui::ColorPicker4("Background Color", (float*) &App.bgColor, ImGuiColorEditFlags_NoAlpha);
+						}
 						break;
 					case 1:		// Graphics
 						ImGui::TextWrapped("This is a graphics panel");
