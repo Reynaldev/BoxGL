@@ -25,13 +25,13 @@ typedef std::string String;
 
 struct
 {
-    GLuint VAO, VBO;
+	GLuint VAO, VBO;
 
-    void init()
-    {
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-    }
+	void init()
+	{
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+	}
 } GLBuffer;
 
 /*
@@ -40,7 +40,7 @@ Shader only struct. Use Cube struct to add and modify a cube.
 struct Box
 {
 private:
-    GLuint progID;
+	GLuint progID;
 	float vertices[180];
 
 	unsigned int texture = 0;
@@ -49,56 +49,56 @@ private:
 public:
 	Box()
 	{
-        float newVerts[] = {
-            // Position             // Texture coords
-            -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
-             0.5f, -0.5f, -0.5f,    1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-            -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
+		float newVerts[] = {
+			// Position             // Texture coords
+			-0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
+			 0.5f, -0.5f, -0.5f,    1.0f, 0.0f,
+			 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
+			 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
+			-0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,    0.0f, 0.0f,
 
-            -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+			-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+			 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
+			-0.5f,  0.5f,  0.5f,    0.0f, 1.0f,
+			-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
 
-            -0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			-0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			-0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+			-0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
 
-             0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			 0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
 
-            -0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
-             0.5f, -0.5f, -0.5f,    1.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-             0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-            -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
-            -0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
+			 0.5f, -0.5f, -0.5f,    1.0f, 1.0f,
+			 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
+			 0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
+			-0.5f, -0.5f,  0.5f,    0.0f, 0.0f,
+			-0.5f, -0.5f, -0.5f,    0.0f, 1.0f,
 
-            -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
-             0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-             0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
-            -0.5f,  0.5f,  0.5f,    0.0f, 0.0f,
-            -0.5f,  0.5f, -0.5f,    0.0f, 1.0f
-        };
+			-0.5f,  0.5f, -0.5f,    0.0f, 1.0f,
+			 0.5f,  0.5f, -0.5f,    1.0f, 1.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			 0.5f,  0.5f,  0.5f,    1.0f, 0.0f,
+			-0.5f,  0.5f,  0.5f,    0.0f, 0.0f,
+			-0.5f,  0.5f, -0.5f,    0.0f, 1.0f
+		};
 
-        memcpy(vertices, newVerts, sizeof(newVerts));
+		memcpy(vertices, newVerts, sizeof(newVerts));
 	}
 
-    void createShader(const char *vertexPath, const char *fragmentPath)
-    {
+	void createShader(const char *vertexPath, const char *fragmentPath)
+	{
 		// Retrieve the vertex/fragment source code from filepath.
 		String vertexCode, fragmentCode;
 		std::ifstream vShaderFile, fShaderFile;
@@ -189,7 +189,7 @@ public:
 		// Delete the shaders as they're linked into our program now and no longer necessary
 		glDeleteShader(vertex);
 		glDeleteShader(fragment);
-    }
+	}
 
 	void createBuffer()
 	{
@@ -293,7 +293,7 @@ struct
 	// Camera
 	glm::mat4 cam = glm::mat4(1.0f);
 
-	float camFoV = 45.0f;
+	float camFoV = 75.0f;
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
@@ -303,13 +303,43 @@ struct
 	// Cube
 	std::vector<Cube> cubes;
 	int cubeAmount = 0;
+	bool onCubeAmountChange = false;
 
 	void updateCubes(Cube cube, CubeMod mod = INCREASE)
 	{
-		if (mod == INCREASE)
+		onCubeAmountChange = true;
+
+		switch (mod)
+		{
+		case INCREASE:
 			cubes.push_back(cube);
-		else
-			cubes.erase(cubes.begin() + cube.getPosID());
+			break;
+		case DECREASE:
+			int pos = getCubePos(cube);
+
+			if (pos == -1)
+			{
+				printf("Cannot find the cube with ID %d\n", cube.getPosID());
+				return;
+			}
+
+			if (pos == (cubes.size() - 1))
+			{
+				printf("Deleting the last cube\n", cube.getPosID(), pos);
+				cubes.pop_back();
+			}
+			else
+			{
+				printf("Found cube %d at %d\n", cube.getPosID(), pos);
+				cubes.erase(cubes.begin() + pos);
+			}
+
+			printf("Size: %d\n", cubes.size());
+			
+			break;
+		}
+
+		onCubeAmountChange = false;
 	}
 
 	unsigned int retrieveNewCubeID()
@@ -322,10 +352,23 @@ struct
 		for (int i = 0; i < cubes.size(); i++)
 		{
 			if (cubes[i].getPosID() >= id)
-				id += cubes[i].getPosID() + 1;
+				id = cubes[i].getPosID() + 1;
 		}
 
 		return id;
+	}
+
+	int getCubePos(Cube nCube)
+	{
+		int pos = -1;
+
+		for (int i = 0; i < cubes.size(); i++)
+		{
+			if (cubes[i].getPosID() == nCube.getPosID())
+				pos = i;
+		}
+
+		return pos;
 	}
 } App;
 
@@ -467,6 +510,12 @@ int main()
 							{
 								Cube cube(App.retrieveNewCubeID(), glm::vec3(0.0f));
 								App.updateCubes(cube);
+
+								printf(
+									"Added a new cube with ID %d\nSize: %d\n", 
+									cube.getPosID(), 
+									App.cubes.size()
+								);
 							}
 							ImGui::SetItemTooltip("Add new cube");
 
@@ -476,20 +525,22 @@ int main()
 								{
 									static int selected = 0;
 									static char prevCombo[8];
-									
-									sprintf(prevCombo, "Cube %d", selected);
 
 									if (ImGui::BeginCombo("Cubes", prevCombo))
 									{
 										for (int i = 0; i < App.cubes.size(); i++)
 										{
 											const bool isSelected = (selected == i);
+											const int id = App.cubes[i].getPosID();
 											char label[8];
 
-											sprintf(label, "Cube %d", i);
+											sprintf(label, "Cube %d", id);
 											
 											if (ImGui::Selectable(label, isSelected))
+											{
 												 selected = i;
+												 sprintf(prevCombo, "Cube %d", id);
+											}
 
 											if (isSelected)
 												ImGui::SetItemDefaultFocus();
@@ -497,14 +548,15 @@ int main()
 										ImGui::EndCombo();
 									}
 
-									Cube &cube = App.cubes.at(App.cubes[selected].getPosID());
+									Cube &cube = App.cubes.at(App.getCubePos(App.cubes[selected].getPosID()));
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
 
-									//if (ImGui::Button("Remove"))
-									//{
-									//	App.updateCubes();
-									//}
+									if (ImGui::Button("Remove"))
+									{
+										App.updateCubes(cube, App.DECREASE);
+										selected = App.cubes.size() - 1;
+									}
 
 									ImGui::TreePop();
 								}
@@ -520,8 +572,7 @@ int main()
 			ImGui::End();
 		}
 
-		glBindVertexArray(GLBuffer.VAO);
-		if (!App.cubes.empty())
+		if (!App.cubes.empty() || !App.onCubeAmountChange)
 		{
 			for (int i = 0; i < App.cubes.size(); i++)
 			{
