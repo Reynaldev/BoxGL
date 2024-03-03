@@ -260,7 +260,9 @@ private:
 	unsigned int id = 0;	// Position id;
 
 public:
-	glm::vec3 pos;
+	float rotVal = 45.0f;
+	glm::vec3 pos = glm::vec3(0.0f); 
+	glm::vec3 rot = glm::vec3(0.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 view = glm::mat4(1.0f);
@@ -302,13 +304,9 @@ struct
 
 	// Cube
 	std::vector<Cube> cubes;
-	int cubeAmount = 0;
-	bool onCubeAmountChange = false;
 
 	void updateCubes(Cube cube, CubeMod mod = INCREASE)
 	{
-		onCubeAmountChange = true;
-
 		switch (mod)
 		{
 		case INCREASE:
@@ -323,23 +321,9 @@ struct
 				return;
 			}
 
-			if (pos == (cubes.size() - 1))
-			{
-				printf("Deleting the last cube\n", cube.getPosID(), pos);
-				cubes.pop_back();
-			}
-			else
-			{
-				printf("Found cube %d at %d\n", cube.getPosID(), pos);
-				cubes.erase(cubes.begin() + pos);
-			}
-
-			printf("Size: %d\n", cubes.size());
-			
+			cubes.erase(cubes.begin() + pos);
 			break;
 		}
-
-		onCubeAmountChange = false;
 	}
 
 	unsigned int retrieveNewCubeID()
@@ -365,7 +349,7 @@ struct
 		for (int i = 0; i < cubes.size(); i++)
 		{
 			if (cubes[i].getPosID() == nCube.getPosID())
-				pos = i;
+				return pos = i;
 		}
 
 		return pos;
@@ -443,7 +427,7 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		double t = glfwGetTime();
+		double updateTime = glfwGetTime();
 
 		glClearColor(App.bgColor.x, App.bgColor.y, App.bgColor.z, App.bgColor.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -468,18 +452,18 @@ int main()
 		{
 			if (ImGui::Begin("Settings", &App.showBoxSettings))
 			{
-				static const char *label[] = {
+				static const char * const label[] = {
 					"Window",
 					"Graphics"
 				};
-				static int selected = 0;
+				static int selectedItemSetting = 0;
 
 				if (ImGui::BeginChild("Left panel", ImVec2(150, 0), true))
 				{
 					for (int i = 0; i < (sizeof(label) / sizeof(char *)); i++)
 					{
-						if (ImGui::Selectable(label[i], selected == i))
-							selected = i;
+						if (ImGui::Selectable(label[i], selectedItemSetting == i))
+							selectedItemSetting = i;
 					}
 				}
 				ImGui::EndChild();
@@ -488,7 +472,7 @@ int main()
 
 				if (ImGui::BeginChild("Right panel", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())))
 				{
-					switch (selected)
+					switch (selectedItemSetting)
 					{
 					case 0:		// Window
 						ImGui::SeparatorText("Camera");
@@ -510,12 +494,6 @@ int main()
 							{
 								Cube cube(App.retrieveNewCubeID(), glm::vec3(0.0f));
 								App.updateCubes(cube);
-
-								printf(
-									"Added a new cube with ID %d\nSize: %d\n", 
-									cube.getPosID(), 
-									App.cubes.size()
-								);
 							}
 							ImGui::SetItemTooltip("Add new cube");
 
@@ -523,24 +501,20 @@ int main()
 							{
 								if (ImGui::TreeNode("Cube settings"))
 								{
-									static int selected = 0;
+									static int selectedItemCube;
 									static char prevCombo[8];
 
 									if (ImGui::BeginCombo("Cubes", prevCombo))
 									{
 										for (int i = 0; i < App.cubes.size(); i++)
 										{
-											const bool isSelected = (selected == i);
-											const int id = App.cubes[i].getPosID();
+											const bool isSelected = (selectedItemCube == i);
 											char label[8];
 
-											sprintf(label, "Cube %d", id);
+											sprintf(label, "Cube %d", App.cubes[i].getPosID());
 											
 											if (ImGui::Selectable(label, isSelected))
-											{
-												 selected = i;
-												 sprintf(prevCombo, "Cube %d", id);
-											}
+												selectedItemCube = i;
 
 											if (isSelected)
 												ImGui::SetItemDefaultFocus();
@@ -548,15 +522,23 @@ int main()
 										ImGui::EndCombo();
 									}
 
-									Cube &cube = App.cubes.at(App.getCubePos(App.cubes[selected].getPosID()));
+									unsigned int cubeID = App.cubes[selectedItemCube].getPosID();
+
+									sprintf(prevCombo, "Cube %d", cubeID);
+
+									Cube &cube = App.cubes.at(App.getCubePos(cubeID));
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
+
+									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
+									//ImGui::DragFloat("Rotation Speed", &cube.rotVal, 1.0f, -90.0f, 100.0f);
 
 									if (ImGui::Button("Remove"))
 									{
 										App.updateCubes(cube, App.DECREASE);
-										selected = App.cubes.size() - 1;
+										selectedItemCube = 0;
 									}
+									ImGui::SetItemTooltip("Remove this Cube?");
 
 									ImGui::TreePop();
 								}
@@ -572,24 +554,47 @@ int main()
 			ImGui::End();
 		}
 
-		if (!App.cubes.empty() || !App.onCubeAmountChange)
+		if (!App.cubes.empty())
 		{
-			for (int i = 0; i < App.cubes.size(); i++)
+			for (Cube &cube : App.cubes)
 			{
-				float angle = 20.0f * (i + 1);
-				App.cubes[i].model = glm::mat4(1.0f);
-				App.cubes[i].view = glm::mat4(1.0f);
+				//float angle = 20.0f * (i + 1);
+				cube.model = glm::mat4(1.0f);
+				cube.view = glm::mat4(1.0f);
 
-				App.cubes[i].model = glm::rotate(
-					App.cubes[i].model,
-					glm::radians(angle * (float)(t / 10.0f)), glm::vec3(0.1f * (i + 1), 0.3f, 0.5f));
+				if (cube.rot.x != 0.0f)
+				{
+					cube.model = glm::rotate(
+						cube.model,
+						glm::radians(cube.rot.x * (float)(updateTime) / 10.0f),
+						glm::vec3(1.0f, 0.0f, 0.0f)
+					);
+				}
 
-				App.cubes[i].view = glm::translate(App.cubes[i].view, App.cubes[i].pos);
+				if (cube.rot.y != 0.0f)
+				{
+					cube.model = glm::rotate(
+						cube.model,
+						glm::radians(cube.rot.y * (float)(updateTime) / 10.0f),
+						glm::vec3(0.0f, 1.0f, 0.0f)
+					);
+				}
+				
+				if (cube.rot.z != 0.0f)
+				{
+					cube.model = glm::rotate(
+						cube.model,
+						glm::radians(cube.rot.z * (float)(updateTime) / 10.0f),
+						glm::vec3(0.0f, 0.0f, 1.0f)
+					);
+				}
+
+				cube.view = glm::translate(cube.view, cube.pos);
 
 				box.draw();
 
-				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(App.cubes[i].model));
-				glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(App.cubes[i].view));
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(cube.model));
+				glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(cube.view));
 				glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(App.cam));
 			}
 		}
