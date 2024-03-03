@@ -260,7 +260,6 @@ private:
 	unsigned int id = 0;	// Position id;
 
 public:
-	float rotVal = 45.0f;
 	glm::vec3 pos = glm::vec3(0.0f); 
 	glm::vec3 rot = glm::vec3(0.0f);
 
@@ -529,9 +528,7 @@ int main()
 									Cube &cube = App.cubes.at(App.getCubePos(cubeID));
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
-
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
-									//ImGui::DragFloat("Rotation Speed", &cube.rotVal, 1.0f, -90.0f, 100.0f);
 
 									if (ImGui::Button("Remove"))
 									{
