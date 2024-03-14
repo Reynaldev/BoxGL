@@ -1,4 +1,4 @@
-#ifdef _WIN32
+#if defined(_WIN32)
 	#define _CRT_SECURE_NO_WARNINGS
 #endif // _WIN32
 
@@ -522,6 +522,7 @@ int main()
 									}
 
 									unsigned int cubeID = App.cubes[selectedItemCube].getPosID();
+									static ImVec4 cubeColor(255.0f, 255.0f, 255.0f, 1.0f);
 
 									sprintf(prevCombo, "Cube %d", cubeID);
 
@@ -529,6 +530,10 @@ int main()
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
+
+									ImGui::ColorPicker4("Color", (float *)&cubeColor, ImGuiColorEditFlags_NoAlpha);
+
+									glUniform4f(glGetUniformLocation(box.getProgram(), "uColor"), cubeColor.x, cubeColor.y, cubeColor.z, cubeColor.w);
 
 									if (ImGui::Button("Remove"))
 									{
