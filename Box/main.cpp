@@ -444,6 +444,11 @@ int main()
 			{
 				ImGui::MenuItem("Settings...", NULL, &App.showBoxSettings);
 
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Exit", "Esc"))
+					break;
+
 				ImGui::EndMenu();
 			}
 
@@ -479,7 +484,7 @@ int main()
 					case 0:		// Window
 						ImGui::SeparatorText("Camera");
 						{
-							ImGui::SliderFloat("Field of View", &App.camFoV, 0.0f, 100.0f);
+							ImGui::SliderFloat("Field of View", &App.camFoV, 1.0f, 100.0f);
 							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 100.0f);
 							ImGui::SliderFloat("Far plane", &App.farPlane, 0.1f, 100.0f);
 						}
@@ -525,7 +530,7 @@ int main()
 									}
 
 									unsigned int cubeID = App.cubes[selectedItemCube].getPosID();
-									static ImVec4 cubeColor(255.0f, 255.0f, 255.0f, 1.0f);
+									static ImVec4 cubeColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 									sprintf(prevCombo, "Cube %d", cubeID);
 
@@ -535,7 +540,7 @@ int main()
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
-									ImGui::ColorPicker4("Color", (float *)&cubeColor, ImGuiColorEditFlags_NoAlpha);
+									ImGui::ColorPicker4("Color", (float *)&cubeColor);
 
 									glUniform4f(glGetUniformLocation(box.getProgram(), "uColor"), cubeColor.x, cubeColor.y, cubeColor.z, cubeColor.w);
 
