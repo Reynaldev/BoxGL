@@ -266,6 +266,9 @@ public:
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 view = glm::mat4(1.0f);
 
+	// Is rotation continuous/auto?
+	bool isAutoRot = false;
+
 	/*
 	Add new cube, where it takes vector size of the cube and position, with default to 0.0f.
 	Use App.retrieveNewCubeID() to retrieve ID.
@@ -530,6 +533,7 @@ int main()
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
+									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
 									ImGui::ColorPicker4("Color", (float *)&cubeColor, ImGuiColorEditFlags_NoAlpha);
 
@@ -564,11 +568,14 @@ int main()
 				cube.model = glm::mat4(1.0f);
 				cube.view = glm::mat4(1.0f);
 
+				// Use glfwTime() if rotation is continuous
+				float ut = (cube.isAutoRot) ? (float)(updateTime) : 1;
+
 				if (cube.rot.x != 0.0f)
 				{
 					cube.model = glm::rotate(
 						cube.model,
-						glm::radians(cube.rot.x * (float)(updateTime) / 10.0f),
+						glm::radians(cube.rot.x * ut / 10.0f),
 						glm::vec3(1.0f, 0.0f, 0.0f)
 					);
 				}
@@ -577,7 +584,7 @@ int main()
 				{
 					cube.model = glm::rotate(
 						cube.model,
-						glm::radians(cube.rot.y * (float)(updateTime) / 10.0f),
+						glm::radians(cube.rot.y * ut / 10.0f),
 						glm::vec3(0.0f, 1.0f, 0.0f)
 					);
 				}
@@ -586,7 +593,7 @@ int main()
 				{
 					cube.model = glm::rotate(
 						cube.model,
-						glm::radians(cube.rot.z * (float)(updateTime) / 10.0f),
+						glm::radians(cube.rot.z * ut / 10.0f),
 						glm::vec3(0.0f, 0.0f, 1.0f)
 					);
 				}
