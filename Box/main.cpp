@@ -583,6 +583,10 @@ int main()
 	box.createBuffer();
 	box.createTexture(0, "container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR);
 
+	box.use();
+	glUniform1i(glGetUniformLocation(box.getProgram(), "uTexture1"), 0);
+	glUniform1i(glGetUniformLocation(box.getProgram(), "uTexture2"), 1);
+
 	App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
 	unsigned int modelLoc = glGetUniformLocation(box.getProgram(), "uModel");
@@ -697,6 +701,8 @@ int main()
 
 									Cube &cube = App.cubes.at(App.getCubePos(cubeID));
 
+									static float textureMixRatio = 0.5f;
+
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
@@ -729,6 +735,9 @@ int main()
 												App.changeCubeTextureFlags |= (1 << i);
 										}
 									}
+
+									ImGui::SliderFloat("Texture ratio", &textureMixRatio, 0.0f, 1.0f);
+									glUniform1f(glGetUniformLocation(box.getProgram(), "uMix"), textureMixRatio);
 
 									if (ImGui::Button("Remove"))
 									{
