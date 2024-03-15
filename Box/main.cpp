@@ -260,11 +260,13 @@ private:
 	unsigned int id = 0;	// Position id;
 
 public:
-	glm::vec3 pos = glm::vec3(0.0f); 
+	glm::vec3 pos = glm::vec3(0.0f, 0.0f, -3.0f); 
 	glm::vec3 rot = glm::vec3(0.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	glm::mat4 view = glm::mat4(1.0f);
+
+	ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Is rotation continuous/auto?
 	bool isAutoRot = false;
@@ -511,7 +513,7 @@ int main()
 									static int selectedItemCube;
 									static char prevCombo[8];
 
-									if (ImGui::BeginCombo("Cubes", prevCombo))
+									if (ImGui::BeginCombo("Cube selected", prevCombo))
 									{
 										for (int i = 0; i < App.cubes.size(); i++)
 										{
@@ -530,7 +532,6 @@ int main()
 									}
 
 									unsigned int cubeID = App.cubes[selectedItemCube].getPosID();
-									static ImVec4 cubeColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 									sprintf(prevCombo, "Cube %d", cubeID);
 
@@ -540,9 +541,10 @@ int main()
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
-									ImGui::ColorPicker4("Color", (float *)&cubeColor);
+									if ((ImGui::ColorPicker4("Color", (float *)&cube.color)))
+										glUniform4f(glGetUniformLocation(box.getProgram(), "uColor"), cube.color.x, cube.color.y, cube.color.z, cube.color.w);
 
-									glUniform4f(glGetUniformLocation(box.getProgram(), "uColor"), cubeColor.x, cubeColor.y, cubeColor.z, cubeColor.w);
+									// TODO: Implement texture change by clicking a button
 
 									if (ImGui::Button("Remove"))
 									{
@@ -569,7 +571,6 @@ int main()
 		{
 			for (Cube &cube : App.cubes)
 			{
-				//float angle = 20.0f * (i + 1);
 				cube.model = glm::mat4(1.0f);
 				cube.view = glm::mat4(1.0f);
 

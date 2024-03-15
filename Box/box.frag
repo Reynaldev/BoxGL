@@ -7,7 +7,7 @@ out vec4 fragColor;
 uniform sampler2D uTexture1;
 uniform sampler2D uTexture2;
 
-uniform vec4 uColor;
+uniform vec4 uColor = vec4(1.0, 1.0, 1.0, 1.0);
 
 void main()
 {
