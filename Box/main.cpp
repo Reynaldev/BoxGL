@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <Windows.h>
+#include <ShObjIdl.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -22,6 +24,14 @@
 #include <stb_image.h>
 
 typedef std::string String;
+
+template<typename T>
+constexpr T clamp(T &v, T max, T min);
+
+template <typename T>
+constexpr T arrLen(T &arr);
+
+void frameBufferSizeCallback(GLFWwindow *window, int width, int height);
 
 struct
 {
@@ -43,8 +53,8 @@ private:
 	GLuint progID;
 	float vertices[180];
 
-	unsigned int texture = 0;
-	int textureW, textureH, textureCh;
+	GLuint texture[2];
+	int textureW[2], textureH[2], textureCh[2];
 
 public:
 	Box()
@@ -204,29 +214,36 @@ public:
 		glEnableVertexAttribArray(1);
 	}
 
-	void createTexture(const char *file, GLuint s, GLuint t, GLuint min, GLuint mag, GLuint fmt = GL_RGB)
+	bool createTexture(int index, const char *file, GLuint s, GLuint t, GLuint min, GLuint mag, GLuint fmt = GL_RGB)
 	{
-		glGenTextures(1, &texture);
+		glGenTextures(1, &texture[index]);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		if (index > 1)
+			return false;
+
+		glActiveTexture(GL_TEXTURE0 + index);
+		glBindTexture(GL_TEXTURE_2D, texture[index]);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, s);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, t);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
 
-		unsigned char *data = stbi_load(file, &textureW, &textureH, &textureCh, 0);
+		stbi_set_flip_vertically_on_load(true);
+
+		unsigned char *data = stbi_load(file, &textureW[index], &textureH[index], &textureCh[index], 0);
 		if (!data)
 		{
 			printf("Failed to load texture\nPath: %s\n", file);
-			return;
+			return false;
 		}
 
-		glTexImage2D(GL_TEXTURE_2D, 0, fmt, textureW, textureH, 0, fmt, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, fmt, textureW[index], textureH[index], 0, fmt, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		stbi_image_free(data);
+
+		return true;
 	}
 
 	void use()
@@ -239,16 +256,19 @@ public:
 		use();
 
 		if (!texture)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture);
-		}
+			for (int i = 0; i < 2; i++)
+			{
+				glActiveTexture(GL_TEXTURE0 + i);
+				glBindTexture(GL_TEXTURE_2D, texture[i]);
+			}
 
 		glBindVertexArray(GLBuffer.VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 
 	GLuint getProgram() { return this->progID; }
+
+	GLuint getTexture(int index) { return texture[index]; }
 };
 
 /*
@@ -260,7 +280,7 @@ private:
 	unsigned int id = 0;	// Position id;
 
 public:
-	glm::vec3 pos = glm::vec3(0.0f, 0.0f, -3.0f); 
+	glm::vec3 pos = glm::vec3(0.0f); 
 	glm::vec3 rot = glm::vec3(0.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
@@ -286,11 +306,18 @@ public:
 
 struct
 {
-	enum CubeMod
+	enum CubeModFlags
 	{
 		INCREASE,
 		DECREASE
 	};
+
+	enum ChangeCubeTextureFlags
+	{
+		TEXTURE0 = 1 << 0,
+		TEXTURE1 = 1 << 1
+	};
+	
 
 	// Window
 	int width = 1280, height = 720;
@@ -299,17 +326,22 @@ struct
 	// Camera
 	glm::mat4 cam = glm::mat4(1.0f);
 
+	String modalName;
+	String filePath;
+
 	float camFoV = 75.0f;
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
 	// Window toggles
+	int changeCubeTextureFlags;
+
 	bool showBoxSettings = false;
 
 	// Cube
 	std::vector<Cube> cubes;
 
-	void updateCubes(Cube cube, CubeMod mod = INCREASE)
+	void updateCubes(Cube cube, CubeModFlags mod = INCREASE)
 	{
 		switch (mod)
 		{
@@ -328,6 +360,128 @@ struct
 			cubes.erase(cubes.begin() + pos);
 			break;
 		}
+	}
+
+	// Create a modal, use showModal() to show the modal and always end the modal by calling endModal()
+	void beginModal(const char *name)
+	{
+		this->modalName = name;
+
+		ImGui::OpenPopup(modalName.c_str());
+		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	}
+
+	bool showModal()
+	{
+		return ImGui::BeginPopupModal(modalName.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize);
+	}
+
+	void endModal()
+	{
+		modalName.clear();
+		ImGui::EndPopup();
+	}
+
+	// Show change texture modal. Automatically creates and ends the modal.
+	void changeTexture(int index, Box &box)
+	{
+		String label = "Add/Change texture ";
+		label.append(std::to_string(index));
+
+		App.beginModal(label.c_str());
+		if (App.showModal())
+		{
+			GLuint wrapper[] = { GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER };
+			GLuint filters[] = { GL_NEAREST, GL_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR };
+			GLuint fmts[] = { GL_RGB, GL_RGBA };
+
+			static int wrapperCurrent = 0;
+			static int filterCurrent = 0;
+			static int formatCurrent = 0;
+
+			ImGui::Combo("Wrapper", &wrapperCurrent, "Repeat\0Mirrored-Repeat\0Clamp to edge\0Clamp to border");
+			ImGui::Combo("Filter", &filterCurrent, "Nearest\0Linear\0Linear - Mipmap Nearest\0Linear - Mipmap Linear");
+			ImGui::Combo("Format", &formatCurrent, "RGB\0RGBA");
+
+			if (ImGui::Button("OK", ImVec2(120, 0)))
+			{
+				box.createTexture(
+					index,
+					filePath.c_str(),
+					wrapper[wrapperCurrent],
+					wrapper[wrapperCurrent],
+					filters[filterCurrent],
+					filters[filterCurrent],
+					fmts[formatCurrent]
+				);
+
+				filePath.clear();
+
+				changeCubeTextureFlags &= ~(1 << index);
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				filePath.clear();
+
+				changeCubeTextureFlags &= ~(1 << index);
+			}
+
+			App.endModal();
+		}
+	}
+
+	String showOpenFileDialog()
+	{
+		String output;
+
+		HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+		if (SUCCEEDED(hr))
+		{
+			IFileOpenDialog *fileOpenDialog;
+
+			// Create the FileOpenDialog
+			hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+				IID_IFileOpenDialog, reinterpret_cast<void **>(&fileOpenDialog));
+			if (SUCCEEDED(hr))
+			{
+				// Show the Open File Dialog
+				hr = fileOpenDialog->Show(NULL);
+
+				// Get the file name from the dialog box
+				if (SUCCEEDED(hr))
+				{
+					IShellItem *shItem;
+
+					hr = fileOpenDialog->GetResult(&shItem);
+					if (SUCCEEDED(hr))
+					{
+						PWSTR filePath;
+						hr = shItem->GetDisplayName(SIGDN_FILESYSPATH, &filePath);
+
+						// Display the file name to the user
+						if (SUCCEEDED(hr))
+						{
+							std::wstring wFilePath(filePath);
+							output = String(wFilePath.begin(), wFilePath.end());
+
+							CoTaskMemFree(filePath);
+						}
+
+						shItem->Release();
+					}
+				}
+
+				fileOpenDialog->Release();
+			}
+
+			CoUninitialize();
+		}
+
+		return output;
 	}
 
 	unsigned int retrieveNewCubeID()
@@ -361,7 +515,7 @@ struct
 } App;
 
 template<typename T>
-inline T clamp(T &v, T max, T min)
+constexpr T clamp(T &v, T max, T min)
 {
 	T rv;
 
@@ -372,6 +526,12 @@ inline T clamp(T &v, T max, T min)
 		v = min;
 
 	return rv = v;
+}
+
+template <typename T>
+constexpr int arrLen(T *arr)
+{
+	return sizeof(arr) / sizeof(*arr);
 }
 
 void frameBufferSizeCallback(GLFWwindow *window, int width, int height)
@@ -421,7 +581,7 @@ int main()
 	Box box = Box();
 	box.createShader("box.vert", "box.frag");
 	box.createBuffer();
-	box.createTexture("container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR);
+	box.createTexture(0, "container.jpg", GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR);
 
 	App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
@@ -501,7 +661,7 @@ int main()
 						{
 							if (ImGui::Button("Add"))
 							{
-								Cube cube(App.retrieveNewCubeID(), glm::vec3(0.0f));
+								Cube cube(App.retrieveNewCubeID(), glm::vec3(0.0f, 0.0f, -3.0f));
 								App.updateCubes(cube);
 							}
 							ImGui::SetItemTooltip("Add new cube");
@@ -542,9 +702,33 @@ int main()
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
 									if ((ImGui::ColorPicker4("Color", (float *)&cube.color)))
-										glUniform4f(glGetUniformLocation(box.getProgram(), "uColor"), cube.color.x, cube.color.y, cube.color.z, cube.color.w);
+										glUniform4f(
+											glGetUniformLocation(box.getProgram(), "uColor"), 
+											cube.color.x, cube.color.y, cube.color.z, cube.color.w
+										);
 
-									// TODO: Implement texture change by clicking a button
+									for (int i = 0; i <= 1; i++)
+									{
+										String label = "Add/Change texture ";
+										label.append(std::to_string(i));
+
+										ImGui::Text("Texture %d", i);
+										ImGui::Image(
+											(ImTextureID)box.getTexture(i), 
+											ImVec2(64, 64), 
+											ImVec2(0.0f, 1.0f), 
+											ImVec2(1.0f, 0.0f)
+										);
+										ImGui::SameLine();
+
+										if (ImGui::Button(label.c_str()))
+										{
+											App.filePath = App.showOpenFileDialog();
+
+											if (!App.filePath.empty())
+												App.changeCubeTextureFlags |= (1 << i);
+										}
+									}
 
 									if (ImGui::Button("Remove"))
 									{
@@ -566,6 +750,12 @@ int main()
 			}
 			ImGui::End();
 		}
+
+		if (App.changeCubeTextureFlags & App.TEXTURE0)
+			App.changeTexture(0, box);
+
+		if (App.changeCubeTextureFlags & App.TEXTURE1)
+			App.changeTexture(1, box);
 
 		if (!App.cubes.empty())
 		{
@@ -610,7 +800,6 @@ int main()
 
 				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(cube.model));
 				glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(cube.view));
-				glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(App.cam));
 			}
 		}
 
@@ -621,6 +810,7 @@ int main()
 		glViewport(0, 0, App.width, App.height);
 
 		App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(App.cam));
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
