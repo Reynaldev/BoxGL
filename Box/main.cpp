@@ -638,7 +638,7 @@ int main()
 		{
 			if (ImGui::Begin("Settings", &App.showBoxSettings))
 			{
-				static const char * const label[] = {
+				static const char *const label[] = {
 					"Window",
 					"Graphics"
 				};
@@ -719,7 +719,7 @@ int main()
 											char label[8];
 
 											sprintf(label, "Cube %d", App.cubes[i].getPosID());
-											
+
 											if (ImGui::Selectable(label, isSelected))
 												selectedItemCube = i;
 
@@ -745,7 +745,7 @@ int main()
 
 									if ((ImGui::ColorPicker4("Color", (float *)&cube.color)))
 										glUniform4f(
-											glGetUniformLocation(box.getProgram(), "uColor"), 
+											glGetUniformLocation(box.getProgram(), "uColor"),
 											cube.color.x, cube.color.y, cube.color.z, cube.color.w
 										);
 
@@ -756,9 +756,9 @@ int main()
 
 										ImGui::Text("Texture %d", i);
 										ImGui::Image(
-											(ImTextureID)box.getTexture(i), 
-											ImVec2(64, 64), 
-											ImVec2(0.0f, 1.0f), 
+											(ImTextureID)box.getTexture(i),
+											ImVec2(64, 64),
+											ImVec2(0.0f, 1.0f),
 											ImVec2(1.0f, 0.0f)
 										);
 										ImGui::SameLine();
@@ -831,7 +831,7 @@ int main()
 						glm::vec3(0.0f, 1.0f, 0.0f)
 					);
 				}
-				
+
 				if (cube.rot.z != 0.0f)
 				{
 					cube.model = glm::rotate(
