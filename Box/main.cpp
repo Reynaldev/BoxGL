@@ -681,6 +681,8 @@ int main()
 							ImGui::SliderFloat("Near plane", &App.nearPlane, -100.0f, 10.0f);
 							ImGui::SliderFloat("Far plane", &App.farPlane, 0.0f, 100.0f);
 
+							ImGui::Spacing();
+
 							static int selectedCamProj = 1;
 							if (ImGui::Combo("Projection", &selectedCamProj, "Orthographic\0Projection"))
 							{
@@ -689,7 +691,10 @@ int main()
 							}
 						}
 
+						ImGui::Spacing();
 						ImGui::SeparatorText("Window");
+						ImGui::Spacing();
+
 						{
 							ImGui::ColorPicker4("Background Color", (float *)&App.bgColor, ImGuiColorEditFlags_NoAlpha);
 						}
@@ -729,6 +734,10 @@ int main()
 										ImGui::EndCombo();
 									}
 
+									ImGui::Spacing();
+									ImGui::SeparatorText("Transform");
+									ImGui::Spacing();
+
 									unsigned int cubeID = App.cubes[selectedItemCube].getPosID();
 
 									sprintf(prevCombo, "Cube %d", cubeID);
@@ -738,16 +747,26 @@ int main()
 									static float textureMixRatio = 0.5f;
 
 									ImGui::DragFloat3("Position", glm::value_ptr(cube.pos));
+									ImGui::DragFloat3("Scale", glm::value_ptr(cube.scale));
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
+
+									ImGui::Spacing();
+									ImGui::SeparatorText("Misc");
+									ImGui::Spacing();
+
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
-									ImGui::DragFloat3("Scale", glm::value_ptr(cube.scale));
+									ImGui::Spacing();
+									ImGui::SeparatorText("Texture");
+									ImGui::Spacing();
 
 									if ((ImGui::ColorPicker4("Color", (float *)&cube.color)))
 										glUniform4f(
 											glGetUniformLocation(box.getProgram(), "uColor"),
 											cube.color.x, cube.color.y, cube.color.z, cube.color.w
 										);
+
+									ImGui::Spacing();
 
 									for (int i = 0; i <= 1; i++)
 									{
@@ -770,10 +789,16 @@ int main()
 											if (!App.filePath.empty())
 												App.changeCubeTextureFlags |= (1 << i);
 										}
+
+										ImGui::Spacing();
 									}
 
 									ImGui::SliderFloat("Texture ratio", &textureMixRatio, 0.0f, 1.0f);
 									glUniform1f(glGetUniformLocation(box.getProgram(), "uMix"), textureMixRatio);
+
+									ImGui::Spacing();
+									ImGui::Separator();
+									ImGui::Spacing();
 
 									if (ImGui::Button("Remove"))
 									{
