@@ -317,7 +317,12 @@ struct
 		TEXTURE0 = 1 << 0,
 		TEXTURE1 = 1 << 1
 	};
-	
+
+	enum CameraProjection
+	{
+		CAM_PROJ_ORTHOGRAPHIC	= 1 << 0,
+		CAM_PROJ_PERSPECTIVE	= 1 << 1
+	};
 
 	// Window
 	int width = 1280, height = 720;
@@ -335,6 +340,9 @@ struct
 
 	// Window toggles
 	int changeCubeTextureFlags;
+	int cameraProjectionFlags = CAM_PROJ_PERSPECTIVE;
+
+	int selectedCamProj = 1;	// Selected camera projection
 
 	bool showBoxSettings = false;
 
@@ -650,9 +658,17 @@ int main()
 					case 0:		// Window
 						ImGui::SeparatorText("Camera");
 						{
+
+
 							ImGui::SliderFloat("Field of View", &App.camFoV, 1.0f, 100.0f);
 							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 100.0f);
 							ImGui::SliderFloat("Far plane", &App.farPlane, 0.1f, 100.0f);
+
+							if (ImGui::Combo("Projection", &App.selectedCamProj, "Orthographic\0Projection"))
+							{
+								App.cameraProjectionFlags = (1 << App.selectedCamProj);
+								App.cam = glm::mat4(1.0f);
+							}
 						}
 
 						ImGui::SeparatorText("Window");
@@ -818,7 +834,11 @@ int main()
 		glfwGetFramebufferSize(window, &App.width, &App.height);
 		glViewport(0, 0, App.width, App.height);
 
-		App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
+		if (App.cameraProjectionFlags & App.CAM_PROJ_ORTHOGRAPHIC)
+			App.cam = glm::ortho(0.0f, (float)App.width, 0.0f, (float)App.height, App.nearPlane, App.farPlane);
+		else if (App.cameraProjectionFlags & App.CAM_PROJ_PERSPECTIVE)
+			App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
+
 		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(App.cam));
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
