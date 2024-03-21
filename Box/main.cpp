@@ -349,7 +349,9 @@ struct
 	int changeCubeTextureFlags;
 	int cameraProjectionFlags = CAM_PROJ_PERSPECTIVE;
 
-	bool showBoxSettings = false;
+	bool showBoxSettings	= false;
+	bool showDemoWindow		= false;
+	bool showAboutModal		= false;
 
 	// Cube
 	std::vector<Cube> cubes;
@@ -631,6 +633,19 @@ int main()
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Help"))
+			{
+				ImGui::MenuItem("About", NULL, &App.showAboutModal);
+
+#if defined(_DEBUG)
+				ImGui::Separator();
+				ImGui::MenuItem("Demo window", NULL, &App.showDemoWindow);
+				ImGui::Separator();
+#endif	// defined(_DEBUG)
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMainMenuBar();
 		}
 
@@ -826,6 +841,25 @@ int main()
 
 		if (App.changeCubeTextureFlags & App.TEXTURE1)
 			App.changeTexture(1, box);
+
+#if defined(_DEBUG)
+		if (App.showDemoWindow)
+			ImGui::ShowDemoWindow(&App.showDemoWindow);
+#endif	// defined(_DEBUG)
+
+		if (App.showAboutModal)
+		{
+			App.beginModal("About BoxGL");
+			if (App.showModal())
+			{
+				ImGui::Text("This is an OpenGL playground app that I use to learn and understand the workings of OpenGL itself");
+
+				if (ImGui::Button("Ok", ImVec2(120, 0)))
+					App.showAboutModal = false;
+
+				App.endModal();
+			}
+		}
 
 		if (!App.cubes.empty())
 		{
