@@ -280,11 +280,12 @@ private:
 	unsigned int id = 0;	// Position id;
 
 public:
-	glm::vec3 pos = glm::vec3(0.0f); 
-	glm::vec3 rot = glm::vec3(0.0f);
+	glm::vec3 pos	= glm::vec3(0.0f); 
+	glm::vec3 rot	= glm::vec3(0.0f);
+	glm::vec3 scale = glm::vec3(1.0f);
 
 	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 view	= glm::mat4(1.0f);
 
 	ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -723,6 +724,8 @@ int main()
 									ImGui::DragFloat3("Rotation", glm::value_ptr(cube.rot));
 									ImGui::Checkbox("Auto rotation", &cube.isAutoRot);
 
+									ImGui::DragFloat3("Scale", glm::value_ptr(cube.scale));
+
 									if ((ImGui::ColorPicker4("Color", (float *)&cube.color)))
 										glUniform4f(
 											glGetUniformLocation(box.getProgram(), "uColor"), 
@@ -791,6 +794,8 @@ int main()
 
 				// Use glfwTime() if rotation is continuous
 				float ut = (cube.isAutoRot) ? (float)(updateTime) : 1;
+
+				cube.model = glm::scale(cube.model, cube.scale);
 
 				if (cube.rot.x != 0.0f)
 				{
