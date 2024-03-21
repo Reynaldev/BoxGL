@@ -339,11 +339,15 @@ struct
 	float nearPlane = 0.1f;
 	float farPlane = 100.0f;
 
+	// For orthogrphic projection
+	float orthoL = 0.0f;	// Left orthographic
+	float orthoR = 1.0f;	// Right orthographic
+	float orthoB = 0.0f;	// Bottom orthographic
+	float orthoT = 1.0f;	// Top orthographic
+
 	// Window toggles
 	int changeCubeTextureFlags;
 	int cameraProjectionFlags = CAM_PROJ_PERSPECTIVE;
-
-	int selectedCamProj = 1;	// Selected camera projection
 
 	bool showBoxSettings = false;
 
@@ -659,15 +663,28 @@ int main()
 					case 0:		// Window
 						ImGui::SeparatorText("Camera");
 						{
+							if (App.cameraProjectionFlags & App.CAM_PROJ_ORTHOGRAPHIC)
+							{
+								ImGui::Spacing();
 
+								ImGui::DragFloat("Left", &App.orthoL, 1.0f, 0.0f, (float)App.width);
+								ImGui::DragFloat("Right", &App.orthoR, 1.0f, 0.0f, (float)App.width);
+								ImGui::DragFloat("Bottom", &App.orthoB, 1.0f, 0.0f, (float)App.height);
+								ImGui::DragFloat("Top", &App.orthoT, 1.0f, 0.0f, (float)App.height);
+
+								ImGui::Spacing();
+								ImGui::Separator();
+								ImGui::Spacing();
+							}
 
 							ImGui::SliderFloat("Field of View", &App.camFoV, 1.0f, 100.0f);
-							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 100.0f);
-							ImGui::SliderFloat("Far plane", &App.farPlane, 0.1f, 100.0f);
+							ImGui::SliderFloat("Near plane", &App.nearPlane, -100.0f, 10.0f);
+							ImGui::SliderFloat("Far plane", &App.farPlane, 0.0f, 100.0f);
 
-							if (ImGui::Combo("Projection", &App.selectedCamProj, "Orthographic\0Projection"))
+							static int selectedCamProj = 1;
+							if (ImGui::Combo("Projection", &selectedCamProj, "Orthographic\0Projection"))
 							{
-								App.cameraProjectionFlags = (1 << App.selectedCamProj);
+								App.cameraProjectionFlags = (1 << selectedCamProj);
 								App.cam = glm::mat4(1.0f);
 							}
 						}
@@ -840,7 +857,7 @@ int main()
 		glViewport(0, 0, App.width, App.height);
 
 		if (App.cameraProjectionFlags & App.CAM_PROJ_ORTHOGRAPHIC)
-			App.cam = glm::ortho(0.0f, (float)App.width, 0.0f, (float)App.height, App.nearPlane, App.farPlane);
+			App.cam = glm::ortho(App.orthoL, App.orthoR, App.orthoB, App.orthoT, App.nearPlane, App.farPlane);
 		else if (App.cameraProjectionFlags & App.CAM_PROJ_PERSPECTIVE)
 			App.cam = glm::perspective(glm::radians(App.camFoV), (float)(App.width / App.height), App.nearPlane, App.farPlane);
 
