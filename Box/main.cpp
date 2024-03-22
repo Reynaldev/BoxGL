@@ -16,9 +16,9 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -456,7 +456,7 @@ struct
 		HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 		if (SUCCEEDED(hr))
 		{
-			IFileOpenDialog *fileOpenDialog;
+			IFileOpenDialog *fileOpenDialog = nullptr;
 
 			// Create the FileOpenDialog
 			hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
@@ -469,12 +469,12 @@ struct
 				// Get the file name from the dialog box
 				if (SUCCEEDED(hr))
 				{
-					IShellItem *shItem;
+					IShellItem *shItem = nullptr;
 
 					hr = fileOpenDialog->GetResult(&shItem);
 					if (SUCCEEDED(hr))
 					{
-						PWSTR filePath;
+						PWSTR filePath = nullptr;
 						hr = shItem->GetDisplayName(SIGDN_FILESYSPATH, &filePath);
 
 						// Display the file name to the user
@@ -693,8 +693,8 @@ int main()
 							}
 
 							ImGui::SliderFloat("Field of View", &App.camFoV, 1.0f, 100.0f);
-							ImGui::SliderFloat("Near plane", &App.nearPlane, -100.0f, 10.0f);
-							ImGui::SliderFloat("Far plane", &App.farPlane, 0.0f, 100.0f);
+							ImGui::SliderFloat("Near plane", &App.nearPlane, 0.1f, 10.0f);
+							ImGui::SliderFloat("Far plane", &App.farPlane, 0.0f, 1000.0f);
 
 							ImGui::Spacing();
 
